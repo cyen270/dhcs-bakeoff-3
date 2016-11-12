@@ -12,12 +12,18 @@ float lettersExpectedTotal = 0; //a running total of the number of letters expec
 float errorsTotal = 0; //a running total of the number of errors (when hitting next)
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
-final int DPIofYourDeviceScreen = 441; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
+final int DPIofYourDeviceScreen = 220; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
 final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
 
 //Variables for my silly implementation. You can delete this:
 char currentLetter = 'a';
+
+Keyboard K;
+float currentOffset = 0;
+float inputAreaX;
+float inputAreaY;
+
 
 //You can modify anything in here. This is just a basic implementation.
 void setup()
@@ -26,9 +32,14 @@ void setup()
   Collections.shuffle(Arrays.asList(phrases)); //randomize the order of the phrases
     
   orientation(PORTRAIT); //can also be LANDSCAPE -- sets orientation on android device
-  size(1000, 1000); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
+  size(550, 770); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
   textFont(createFont("Arial", 24)); //set the font to arial 24
+  rectMode(CORNER);
+  inputAreaX = width/2 - sizeOfInputArea/2;
+  inputAreaY = height/2 - sizeOfInputArea/2;
+
   noStroke(); //my code doesn't use any strokes.
+  K = new Keyboard();
 }
 
 //You can modify anything in here. This is just a basic implementation.
@@ -38,7 +49,7 @@ void draw()
 
  // image(watch,-200,200);
   fill(100);
-  rect(200, 200, sizeOfInputArea, sizeOfInputArea); //input area should be 2" by 2"
+  rect(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea); //input area should be 2" by 2"
 
   if (finishTime!=0)
   {
@@ -62,6 +73,8 @@ void draw()
 
   if (startTime!=0)
   {
+    K.drawKeyboard(currentOffset);
+        
     //you will need something like the next 10 lines in your code. Output does not have to be within the 2 inch area!
     textAlign(LEFT); //align the text left
     fill(128);
@@ -75,15 +88,21 @@ void draw()
     text("NEXT > ", 850, 100); //draw next label
 
     //my draw code
-    textAlign(CENTER);
-    text("" + currentLetter, 200+sizeOfInputArea/2, 200+sizeOfInputArea/3); //draw current letter
-    fill(255, 0, 0);
-    rect(200, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw left red button
-    fill(0, 255, 0);
-    rect(200+sizeOfInputArea/2, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw right green button
+    //textAlign(CENTER);
+    //text("" + currentLetter, 200+sizeOfInputArea/2, 200+sizeOfInputArea/3); //draw current letter
+    //fill(255, 0, 0);
+    //rect(200, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw left red button
+    //fill(0, 255, 0);
+    //rect(200+sizeOfInputArea/2, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw right green button
   }
   
 }
+
+
+void mouseDragged(){
+   currentOffset += (pmouseX - mouseX);
+}
+
 
 boolean didMouseClick(float x, float y, float w, float h) //simple function to do hit testing
 {
@@ -190,8 +209,6 @@ void nextTrial()
   currentPhrase = phrases[currTrialNum]; // load the next phrase!
   //currentPhrase = "abc"; // uncomment this to override the test phrase (useful for debugging)
 }
-
-
 
 //=========SHOULD NOT NEED TO TOUCH THIS METHOD AT ALL!==============
 int computeLevenshteinDistance(String phrase1, String phrase2) //this computers error between two strings
