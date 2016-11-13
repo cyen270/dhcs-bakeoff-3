@@ -12,9 +12,9 @@ float lettersExpectedTotal = 0; //a running total of the number of letters expec
 float errorsTotal = 0; //a running total of the number of errors (when hitting next)
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
-final int DPIofYourDeviceScreen = 220; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
+final int DPIofYourDeviceScreen = 113; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
-final float sizeOfInputArea = DPIofYourDeviceScreen*1; //aka, 1.0 inches square!
+final float sizeOfInputArea = DPIofYourDeviceScreen*1 ; //aka, 1.0 inches square!
 
 //Variables for my silly implementation. You can delete this:
 char currentLetter = 'a';
@@ -23,7 +23,10 @@ Keyboard K;
 float currentOffset = 0;
 float inputAreaX;
 float inputAreaY;
-
+float currentScroll = 0;
+float scrollLimit = sizeOfInputArea / 4;
+KeyboardButton PrevKey = null;
+KeyboardButton CurrentKey = null;
 
 //You can modify anything in here. This is just a basic implementation.
 void setup()
@@ -39,7 +42,8 @@ void setup()
   inputAreaY = height/2 - sizeOfInputArea/2;
 
   noStroke(); //my code doesn't use any strokes.
-  K = new Keyboard();
+  K = new Keyboard<RectKeyboardButton, RectKeyboardButtonFactory>(new RectKeyboardButtonFactory());
+  //K = new Keyboard<TriangleKeyboardButton, TriangleKeyboardButtonFactory>(new TriangleKeyboardButtonFactory());
 }
 
 //You can modify anything in here. This is just a basic implementation.
@@ -101,6 +105,13 @@ void draw()
 
 void mouseDragged(){
    currentOffset += (pmouseX - mouseX);
+   currentOffset = currentOffset < 0 ? 0 : currentOffset;
+   currentOffset = currentOffset > K.maxWidth ? K.maxWidth : currentOffset;
+   currentScroll += Math.abs(pmouseX - mouseX);
+   if(currentScroll > scrollLimit && CurrentKey != null){
+     CurrentKey.selected = false;
+     CurrentKey = null;
+   }
 }
 
 
@@ -109,10 +120,30 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
   return (mouseX > x && mouseX<x+w && mouseY>y && mouseY<y+h); //check to see if it is in button bounds
 }
 
+void mouseReleased(){
+  if(CurrentKey == PrevKey && CurrentKey != null){
+    currentTyped += CurrentKey.key;
+  }
+}
 
 void mousePressed()
 {
+  PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
+  KeyboardButton NextKey = K.whatButton(virtualPoint);
+  if(CurrentKey != null){
+    CurrentKey.selected = false;
+  }
+  if(NextKey != null){
+    NextKey.selected = true;
+  }
+  PrevKey = CurrentKey;
+  CurrentKey = NextKey;
+  currentScroll = 0;
 
+  //PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
+  //PrevKey = K.whatButton(virtualPoint);
+  
+  /*
   if (didMouseClick(200, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2)) //check if click in left button
   {
     currentLetter --;
@@ -142,6 +173,7 @@ void mousePressed()
   {
     nextTrial(); //if so, advance to next trial
   }
+  */
 }
 
 
