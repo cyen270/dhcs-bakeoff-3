@@ -58,6 +58,7 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
       }
     }
     //second cover the sceen where you can't press them
+    stroke(0);
     fill(0);
     //left
     rect(0, 0, inputAreaX, height);

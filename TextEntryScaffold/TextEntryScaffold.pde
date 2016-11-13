@@ -104,13 +104,15 @@ void draw()
 
 
 void mouseDragged(){
-   currentOffset += (pmouseX - mouseX);
-   currentOffset = currentOffset < 0 ? 0 : currentOffset;
-   currentOffset = currentOffset > K.maxWidth ? K.maxWidth : currentOffset;
-   currentScroll += Math.abs(pmouseX - mouseX);
-   if(currentScroll > scrollLimit && CurrentKey != null){
-     CurrentKey.selected = false;
-     CurrentKey = null;
+   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
+     currentOffset += (pmouseX - mouseX);
+     currentOffset = currentOffset < 0 ? 0 : currentOffset;
+     currentOffset = currentOffset > K.maxWidth ? K.maxWidth : currentOffset;
+     currentScroll += Math.abs(pmouseX - mouseX);
+     if(currentScroll > scrollLimit && CurrentKey != null){
+       CurrentKey.selected = false;
+       CurrentKey = null;
+     }
    }
 }
 
@@ -121,24 +123,28 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 }
 
 void mouseReleased(){
-  if(CurrentKey == PrevKey && CurrentKey != null){
-    currentTyped += CurrentKey.key;
+  if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
+    if(CurrentKey == PrevKey && CurrentKey != null){
+      currentTyped += CurrentKey.key;
+    }
   }
 }
 
 void mousePressed()
 {
-  PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
-  KeyboardButton NextKey = K.whatButton(virtualPoint);
-  if(CurrentKey != null){
-    CurrentKey.selected = false;
+  if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
+    PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
+    KeyboardButton NextKey = K.whatButton(virtualPoint);
+    if(CurrentKey != null){
+      CurrentKey.selected = false;
+    }
+    if(NextKey != null){
+      NextKey.selected = true;
+    }
+    PrevKey = CurrentKey;
+    CurrentKey = NextKey;
+    currentScroll = 0;
   }
-  if(NextKey != null){
-    NextKey.selected = true;
-  }
-  PrevKey = CurrentKey;
-  CurrentKey = NextKey;
-  currentScroll = 0;
 
   //PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
   //PrevKey = K.whatButton(virtualPoint);

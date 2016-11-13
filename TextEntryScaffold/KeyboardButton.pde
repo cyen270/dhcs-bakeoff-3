@@ -59,16 +59,19 @@ class RectKeyboardButton extends KeyboardButton {
 
   void drawButton(float offsetX){
     //boarder black
-    stroke(0);
     //fill white for temp
     if(selected){
       fill(0, 255, 0);
+      stroke(0);
     } else{
       fill(255);
+      stroke(0);
     }  
+    strokeWeight(5);
     //draw rect
     rect(x0 - offsetX, y0, rectWidth, rectHeight, cornerRadius);
-    //todo; Draw text
+    
+    //Draw text
     fill(0);
     textAlign(CENTER, CENTER);
     text(displayText, centerX - offsetX, centerY);
