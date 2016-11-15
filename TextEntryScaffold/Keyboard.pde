@@ -1,13 +1,9 @@
 
-float keyMargin = 0;
-float rectWidth = (sizeOfInputArea - keyMargin * 4) / 2.5;
+static float keyMargin = 0;
+static float rectWidth = (sizeOfInputArea - keyMargin * 4) / 2.5;
     //might change height to accmodate for pull downs
-float rectHeight = (sizeOfInputArea - keyMargin * 6) / 3;
-float triangleHeight = (sizeOfInputArea / 2f - keyMargin * 2) / 2f  ;
-
-enum KEY {
-  A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, DEL, SPACE, NONE
-}
+static float rectHeight = (sizeOfInputArea - keyMargin * 6) / 3;
+static float triangleHeight = (sizeOfInputArea / 2f - keyMargin * 2) / 2f  ;
 
 class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButtonFactory<Button>> {
   float maxWidth = 0;

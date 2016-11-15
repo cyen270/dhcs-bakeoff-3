@@ -12,14 +12,16 @@ float lettersExpectedTotal = 0; //a running total of the number of letters expec
 float errorsTotal = 0; //a running total of the number of errors (when hitting next)
 String currentPhrase = ""; //the current target phrase
 String currentTyped = ""; //what the user has typed so far
-final int DPIofYourDeviceScreen = 113; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
+static final int DPIofYourDeviceScreen = 240; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
-final float sizeOfInputArea = DPIofYourDeviceScreen*1 ; //aka, 1.0 inches square!
+static final float sizeOfInputArea = DPIofYourDeviceScreen*1 ; //aka, 1.0 inches square!
 
 //Variables for my silly implementation. You can delete this:
 char currentLetter = 'a';
 
-Keyboard K;
+static final int blinkingSpeed = 500; //number of milis betwen blinks
+
+static Keyboard K;
 float currentOffset = 0;
 float inputAreaX;
 float inputAreaY;
@@ -35,7 +37,7 @@ void setup()
   Collections.shuffle(Arrays.asList(phrases)); //randomize the order of the phrases
     
   orientation(PORTRAIT); //can also be LANDSCAPE -- sets orientation on android device
-  size(550, 770); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
+  size(480, 854); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
   textFont(createFont("Arial", 24)); //set the font to arial 24
   rectMode(CORNER);
   inputAreaX = width/2 - sizeOfInputArea/2;
@@ -85,11 +87,17 @@ void draw()
     text("Phrase " + (currTrialNum+1) + " of " + totalTrialNum, 70, 50); //draw the trial count
     fill(255);
     text("Target:   " + currentPhrase, 70, 100); //draw the target string
-    text("Entered:  " + currentTyped, 70, 140); //draw what the user has entered thus far 
+    if((millis() / blinkingSpeed) % 2 == 0 ){
+      text("Entered:  " + currentTyped, 70, 140); //draw what the user has entered thus far 
+    } else {
+      text("Entered:  " + currentTyped + "|", 70, 140); //draw what the user has entered thus far 
+    }
+    
+    
     fill(255, 0, 0);
-    rect(800, 00, 200, 200); //drag next button
+    rect(width-200, height-200, 200, 200); //drag next button
     fill(255);
-    text("NEXT > ", 850, 100); //draw next label
+    text("NEXT > ", width-100, height-100); //draw next label
 
     //my draw code
     //textAlign(CENTER);
