@@ -1,7 +1,7 @@
 
 static float keyMargin = 0;
 static float rectWidthSmall = (sizeOfInputArea - keyMargin * 4) / 11;
-static float rectHeightSmall = (sizeOfInputArea - keyMargin * 6) / 12;
+static float rectHeightSmall = (sizeOfInputArea - keyMargin * 6) / 3;
 
 static float rectWidth = (sizeOfInputArea - keyMargin * 4) / 3.5;
     //might change height to accmodate for pull downs
@@ -9,7 +9,7 @@ static float rectHeight = (sizeOfInputArea - keyMargin * 6) / 3;
 static float triangleHeight = (sizeOfInputArea / 2f - keyMargin * 2) / 2f  ;
 
 class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButtonFactory<Button>> {
-  boolean smallMode = false;//true;
+  boolean smallMode = true;
   float maxWidth = 0;
   
   ArrayList<ArrayList<Button>> rows = new ArrayList<ArrayList<Button>>();
@@ -43,8 +43,8 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
       //make small char
       centerXOffset = i*(2f*keyMargin + rectWidthSmall) + keyMargin + rectWidthSmall / 2f;
       println("keyheight =" + rectHeightSmall);
-      centerYoffset = sizeOfInputArea /2 + row*(2f*keyMargin + rectHeightSmall) + keyMargin + rectHeightSmall / 2f;
-      centerX = inputAreaX + centerXOffset;
+      centerYoffset = (sizeOfInputArea - rectHeightSmall * 3) + row*(2f*keyMargin + rectHeightSmall) + keyMargin + rectHeightSmall / 2f;
+      centerX = inputAreaX + centerXOffset - (sizeOfInputArea - rectWidthSmall * 12)/2 ;
       centerY = inputAreaY + centerYoffset;      
       Button smallButton = Factory.factory(k, centerX, centerY, row, i, rectHeightSmall, rectWidthSmall, newButton);
       newSmallRow.add(smallButton);
@@ -90,7 +90,7 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
         if(k.isWithinButton(p)){
           if(k.bigButton != null){
             smallMode = false;
-            return (float)(k.bigButton.centerX - sizeOfInputArea / 2f);
+            return (float)(k.bigButton.centerX - sizeOfInputArea);
           }
         }
       }

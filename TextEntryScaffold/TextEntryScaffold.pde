@@ -63,7 +63,7 @@ void draw()
  // image(watch,-200,200);
   fill(100);
   rect(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea); //input area should be 2" by 2"
-  if(velocity != 0 && lastAutoMove != 0){
+  if(!K.smallMode && velocity != 0 && lastAutoMove != 0){
     float sign = velocity < 0 ? -1f : 1f; 
     float newVelocity = sign * (Math.abs(velocity) - deceleration * (millis() - lastAutoMove));
     if(Math.abs(newVelocity) >= Math.abs(velocity)){
@@ -148,7 +148,9 @@ void scroll(float dx){
 
 void mouseDragged(){
    if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-     scroll(pmouseX - mouseX);
+     if(!K.smallMode){
+       scroll(pmouseX - mouseX);
+     }
    } else {
      startAutoScroll();
    }
@@ -189,8 +191,8 @@ void mouseReleased(){
         CurrentKey.selected = false;
         CurrentKey = null;
         PrevKey = null;
-        //K.smallMode = true;
-        //currentOffset = 0;
+        K.smallMode = true;
+        currentOffset = 10;
       }
     }
     //if(CurrentKey == PrevKey && CurrentKey != null){
