@@ -1,7 +1,7 @@
 
 static float keyMargin = 0;
-static float rectWidthSmall = (sizeOfInputArea - keyMargin * 4) / 11;
-static float rectHeightSmall = (sizeOfInputArea - keyMargin * 6) / 3;
+static float rectWidthSmall = (sizeOfInputArea - keyMargin * 4) / 10;
+static float rectHeightSmall = (sizeOfInputArea - keyMargin * 6) / 6;
 
 static float rectWidth = (sizeOfInputArea - keyMargin * 4) / 3.5;
     //might change height to accmodate for pull downs
@@ -33,7 +33,6 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
       //make big char
       Character k = A.get(i);
       float centerXOffset = i*(2f*keyMargin + rectWidth) + keyMargin + rectWidth / 2f;
-      println("keyheight =" + Factory.keyHeight());
       float centerYoffset = row*(2f*keyMargin + Factory.keyHeight()) + keyMargin + Factory.keyHeight() / 2f;
       float centerX = inputAreaX + centerXOffset;
       float centerY = inputAreaY + centerYoffset;      
@@ -42,12 +41,12 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
       
       //make small char
       centerXOffset = i*(2f*keyMargin + rectWidthSmall) + keyMargin + rectWidthSmall / 2f;
-      println("keyheight =" + rectHeightSmall);
       centerYoffset = (sizeOfInputArea - rectHeightSmall * 3) + row*(2f*keyMargin + rectHeightSmall) + keyMargin + rectHeightSmall / 2f;
-      centerX = inputAreaX + centerXOffset - (sizeOfInputArea - rectWidthSmall * 12)/2 ;
+      centerX = inputAreaX + centerXOffset;// - (sizeOfInputArea - rectWidthSmall * 11)/2 ;
       centerY = inputAreaY + centerYoffset;      
       Button smallButton = Factory.factory(k, centerX, centerY, row, i, rectHeightSmall, rectWidthSmall, newButton);
       newSmallRow.add(smallButton);
+      newButton.relButton = smallButton;
     }
     rows.add(newRow);
     smallRows.add(newSmallRow);
@@ -66,7 +65,7 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
     if(smallMode){
       for(ArrayList<Button> row: smallRows){
         for(KeyboardButton k: row){
-          k.drawButton(offsetX);
+          k.drawButton(0);
         }
       }
     } else {
@@ -88,9 +87,9 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
    for(ArrayList<Button> row: smallRows){
       for(KeyboardButton k: row){
         if(k.isWithinButton(p)){
-          if(k.bigButton != null){
+          if(k.relButton != null){
             smallMode = false;
-            return (float)(k.bigButton.centerX - sizeOfInputArea);
+            return (float)(k.relButton.centerX - sizeOfInputArea);
           }
         }
       }
@@ -102,7 +101,7 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
        for(ArrayList<Button> row: smallRows){
         for(KeyboardButton k: row){
           if(k.isWithinButton(p)){
-            if(k.bigButton != null){
+            if(k.relButton != null){
               return k;
             }
           }

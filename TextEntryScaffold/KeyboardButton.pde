@@ -15,12 +15,12 @@ abstract class KeyboardButton {
   int row; //0-3
   int index;
   Boolean selected = false;
-  KeyboardButton bigButton = null;
+  KeyboardButton relButton = null;
 
   KeyboardButton(Character c, float x, float y, int r, int i, float h, float w, KeyboardButton b){
     this( c,  x,  y,  r,  i, h, w);
 
-    bigButton = b;
+    relButton = b;
   }
 
   KeyboardButton(Character c, float x, float y, int r, int i, float h, float w){
@@ -59,7 +59,7 @@ class RectKeyboardButton extends KeyboardButton {
   
   RectKeyboardButton(Character c, float x, float y, int r, int i, float h, float w, KeyboardButton b){
     this( c,  x,  y,  r,  i, h, w);
-    bigButton = b;
+    relButton = b;
   }
 
   RectKeyboardButton(Character c, float x, float y, int r, int i, float h, float w){
@@ -126,7 +126,7 @@ class RectKeyboardButtonFactory implements KeyboardButtonFactory<RectKeyboardBut
   
 //  TriangleKeyboardButton(Character c, float x, float y, int r, int i, KeyboardButton b){
 //    this( c,  x,  y,  r,  i);
-//    bigButton = b;
+//    relButton = b;
 //  }
   
 //  TriangleKeyboardButton(char c, float x, float y, int r, int i){

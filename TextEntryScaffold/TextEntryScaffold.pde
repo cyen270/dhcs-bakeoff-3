@@ -147,13 +147,13 @@ void scroll(float dx){
 }
 
 void mouseDragged(){
-   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-     if(!K.smallMode){
-       scroll(pmouseX - mouseX);
-     }
-   } else {
-     startAutoScroll();
-   }
+   //if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
+   //  if(!K.smallMode){
+   //    scroll(pmouseX - mouseX);
+   //  }
+   //} else {
+   //  startAutoScroll();
+   //}
 }
 
 void startAutoScroll(){ 
@@ -180,6 +180,7 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 void mouseReleased(){
   if(startTime==0)
     return;
+  /*
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
     PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
     if(K.smallMode && CurrentKey != null){
@@ -195,26 +196,9 @@ void mouseReleased(){
         currentOffset = 10;
       }
     }
-    //if(CurrentKey == PrevKey && CurrentKey != null){
-    //  currentTyped += CurrentKey.key;
-    //  CurrentKey.selected = false;
-    //  CurrentKey = null;
-    //  PrevKey = null;
-    //}
     startAutoScroll();
-    //if(currentScroll > scrollLimit){
-    //  lastAutoMove = millis();
-    //  float t = millis() - mouseDownMilis;
-    //  float dx = mouseDownX - mouseX;
-    //  velocity = dx / t;
-    //  if(velocity > 3){
-    //    velocity = 3;
-    //  } else if (velocity < -3){
-    //    velocity = -3;
-    //  }
-    //  println("Velocity = " + velocity);
-    //}
   }
+  */
 
 }
 
@@ -224,22 +208,44 @@ void mousePressed()
     return;
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
     PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
-    if(velocity < 0.06){
-      mouseDownMilis = millis();
-      mouseDownX = mouseX;
-      KeyboardButton NextKey = K.whatButton(virtualPoint);
-      if(CurrentKey != null){
-        CurrentKey.selected = false;
-      }
-      if(NextKey != null){
-        NextKey.selected = true;
-      }
-      PrevKey = CurrentKey;
-      CurrentKey = NextKey;
-      currentScroll = 0;
+    KeyboardButton Key = K.whatButton(virtualPoint);
+    if(K.smallMode){
+      float newOffset = K.zoomIn(virtualPoint);
+      currentOffset = newOffset;
     } else {
-      velocity = 0;
-    }
+      if(Key != null){
+        currentTyped += Key.key;
+        //CurrentKey = null;
+        K.smallMode = true;
+        currentOffset = 10;
+      }
+     }
+     if(Key != null){
+      if(PrevKey != null){
+        PrevKey.selected = false;
+        PrevKey.relButton.selected = false;
+      }
+      Key.selected = true;
+      Key.relButton.selected = true;
+      PrevKey = Key;
+     }
+
+    //if(velocity < 0.06){
+    //  mouseDownMilis = millis();
+    //  mouseDownX = mouseX;
+    //  KeyboardButton NextKey = K.whatButton(virtualPoint);
+    //  if(CurrentKey != null){
+    //    CurrentKey.selected = false;
+    //  }
+    //  if(NextKey != null){
+    //    NextKey.selected = true;
+    //  }
+    //  PrevKey = CurrentKey;
+    //  CurrentKey = NextKey;
+    //  currentScroll = 0;
+    //} else {
+    //  velocity = 0;
+    //}
   }
 
   //PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
