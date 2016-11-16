@@ -1,3 +1,4 @@
+import java.util.Collections;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -26,9 +27,15 @@ float currentOffset = 0;
 float inputAreaX;
 float inputAreaY;
 float currentScroll = 0;
-float scrollLimit = sizeOfInputArea / 4;
+float scrollLimit = rectWidth / 2;
 KeyboardButton PrevKey = null;
 KeyboardButton CurrentKey = null;
+
+float mouseDownX = 0;
+float mouseDownMilis = 0;
+float velocity = 0;
+float lastAutoMove = 0;
+float deceleration = 1 / 1000f;
 
 //You can modify anything in here. This is just a basic implementation.
 void setup()
@@ -56,7 +63,25 @@ void draw()
  // image(watch,-200,200);
   fill(100);
   rect(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea); //input area should be 2" by 2"
-
+  if(velocity != 0 && lastAutoMove != 0){
+    float sign = velocity < 0 ? -1f : 1f; 
+    float newVelocity = sign * (Math.abs(velocity) - deceleration * (millis() - lastAutoMove));
+    if(Math.abs(newVelocity) >= Math.abs(velocity)){
+      velocity = 0;
+    } else {
+      velocity = newVelocity;
+    }
+    velocity = Math.abs(velocity) < 0.05 ? 0 : velocity;
+    velocity = Math.abs(velocity) > 10 ? 10 : velocity;
+    float dx = velocity * (millis() - lastAutoMove);
+    if(sign == -1 && (currentOffset + dx) <= 0){
+      velocity = 0;
+    } if(sign == 1 && (currentOffset + dx) >= K.maxWidth){
+      velocity = 0;
+    }
+    println("new velocity = " + velocity);
+    scroll(dx);
+  }
   if (finishTime!=0)
   {
     fill(255);
@@ -86,11 +111,11 @@ void draw()
     fill(128);
     text("Phrase " + (currTrialNum+1) + " of " + totalTrialNum, 70, 50); //draw the trial count
     fill(255);
-    text("Target:   " + currentPhrase, 70, 100); //draw the target string
+    text("Target:   " + currentPhrase, 0, 100); //draw the target string
     if((millis() / blinkingSpeed) % 2 == 0 ){
-      text("Entered:  " + currentTyped, 70, 140); //draw what the user has entered thus far 
+      text("Entered:  " + currentTyped, 0, 140); //draw what the user has entered thus far 
     } else {
-      text("Entered:  " + currentTyped + "|", 70, 140); //draw what the user has entered thus far 
+      text("Entered:  " + currentTyped + "|", 0, 140); //draw what the user has entered thus far 
     }
     
     
@@ -110,20 +135,40 @@ void draw()
   
 }
 
-
-void mouseDragged(){
-   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-     currentOffset += (pmouseX - mouseX);
-     currentOffset = currentOffset < 0 ? 0 : currentOffset;
-     currentOffset = currentOffset > K.maxWidth ? K.maxWidth : currentOffset;
-     currentScroll += Math.abs(pmouseX - mouseX);
-     if(currentScroll > scrollLimit && CurrentKey != null){
-       CurrentKey.selected = false;
-       CurrentKey = null;
-     }
+void scroll(float dx){
+   currentOffset += dx;
+   currentOffset = currentOffset < 0 ? 0 : currentOffset;
+   currentOffset = currentOffset > K.maxWidth ? K.maxWidth : currentOffset;
+   currentScroll += Math.abs(dx);
+   if(currentScroll > scrollLimit && CurrentKey != null){
+     CurrentKey.selected = false;
+     CurrentKey = null;
    }
 }
 
+void mouseDragged(){
+   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
+     scroll(pmouseX - mouseX);
+   } else {
+     startAutoScroll();
+   }
+}
+
+void startAutoScroll(){ 
+  //don't double start
+  if(velocity == 0 && currentScroll > scrollLimit){
+    lastAutoMove = millis();
+    float t = millis() - mouseDownMilis;
+    float dx = mouseDownX - mouseX;
+    velocity = dx / t;
+    if(velocity > 3){
+      velocity = 3;
+    } else if (velocity < -3){
+      velocity = -3;
+    }
+    println("Velocity = " + velocity);
+  }
+}
 
 boolean didMouseClick(float x, float y, float w, float h) //simple function to do hit testing
 {
@@ -131,27 +176,68 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 }
 
 void mouseReleased(){
+  if(startTime==0)
+    return;
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-    if(CurrentKey == PrevKey && CurrentKey != null){
-      currentTyped += CurrentKey.key;
+    PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
+    if(K.smallMode && CurrentKey != null){
+      float newOffset = K.zoomIn(virtualPoint);
+      currentOffset = newOffset;
+    } else {
+      if(CurrentKey != null && currentScroll < scrollLimit){
+        currentTyped += CurrentKey.key;
+        CurrentKey.selected = false;
+        CurrentKey = null;
+        PrevKey = null;
+        //K.smallMode = true;
+        //currentOffset = 0;
+      }
     }
+    //if(CurrentKey == PrevKey && CurrentKey != null){
+    //  currentTyped += CurrentKey.key;
+    //  CurrentKey.selected = false;
+    //  CurrentKey = null;
+    //  PrevKey = null;
+    //}
+    startAutoScroll();
+    //if(currentScroll > scrollLimit){
+    //  lastAutoMove = millis();
+    //  float t = millis() - mouseDownMilis;
+    //  float dx = mouseDownX - mouseX;
+    //  velocity = dx / t;
+    //  if(velocity > 3){
+    //    velocity = 3;
+    //  } else if (velocity < -3){
+    //    velocity = -3;
+    //  }
+    //  println("Velocity = " + velocity);
+    //}
   }
+
 }
 
 void mousePressed()
 {
+  if(startTime==0)
+    return;
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
     PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
-    KeyboardButton NextKey = K.whatButton(virtualPoint);
-    if(CurrentKey != null){
-      CurrentKey.selected = false;
+    if(velocity < 0.06){
+      mouseDownMilis = millis();
+      mouseDownX = mouseX;
+      KeyboardButton NextKey = K.whatButton(virtualPoint);
+      if(CurrentKey != null){
+        CurrentKey.selected = false;
+      }
+      if(NextKey != null){
+        NextKey.selected = true;
+      }
+      PrevKey = CurrentKey;
+      CurrentKey = NextKey;
+      currentScroll = 0;
+    } else {
+      velocity = 0;
     }
-    if(NextKey != null){
-      NextKey.selected = true;
-    }
-    PrevKey = CurrentKey;
-    CurrentKey = NextKey;
-    currentScroll = 0;
   }
 
   //PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
@@ -181,13 +267,13 @@ void mousePressed()
     else if (currentLetter!='`') //if not any of the above cases, add the current letter to the typed string
       currentTyped+=currentLetter;
   }
-
+*/
   //You are allowed to have a next button outside the 2" area
-  if (didMouseClick(800, 00, 200, 200)) //check if click is in next button
+  if (didMouseClick(width-200, height-200, 200, 200)) //check if click is in next button
   {
     nextTrial(); //if so, advance to next trial
   }
-  */
+  
 }
 
 
