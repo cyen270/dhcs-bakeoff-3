@@ -16,7 +16,9 @@ abstract class KeyboardButton {
   int index;
   Boolean selected = false;
   KeyboardButton relButton = null;
-
+  KeyboardButton leftButton = null;
+  KeyboardButton rightButton = null;
+  
   KeyboardButton(Character c, float x, float y, int r, int i, float h, float w, KeyboardButton b){
     this( c,  x,  y,  r,  i, h, w);
 
@@ -26,7 +28,16 @@ abstract class KeyboardButton {
   KeyboardButton(Character c, float x, float y, int r, int i, float h, float w){
     index = i;
     key = c;
-    displayText = c == ' ' ? "_" : Character.toString(Character.toUpperCase(key));
+    switch(c){
+      case ' ':
+        displayText = "SPACE";
+        break;
+      case '-':
+        displayText = "DEL";
+        break;
+      default:
+        displayText = Character.toString(Character.toUpperCase(key));
+    }
     centerX = x;
     centerY = y;
     myWidth = w;
@@ -36,7 +47,7 @@ abstract class KeyboardButton {
 
   /*Tests if a point P is in the button
    */
-  abstract Boolean isWithinButton(PVector p);
+  abstract Boolean isWithinButton(int x, int y);
 
   
   /* Draws a button for a given offset
@@ -74,9 +85,9 @@ class RectKeyboardButton extends KeyboardButton {
   
   /*Tests if a point P is in the button
    */
-  Boolean isWithinButton(PVector p){
-    return (p.x >= x0) && ((p.x - x0) <= myWidth) &&
-           (p.y >= y0) && ((p.y - y0) <= myHeight);
+  Boolean isWithinButton(int x, int y){
+    return (x >= x0) && ((x - x0) <= myWidth) &&
+           (y >= y0) && ((y - y0) <= myHeight);
   }
 
 

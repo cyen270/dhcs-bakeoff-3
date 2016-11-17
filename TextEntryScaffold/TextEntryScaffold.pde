@@ -1,54 +1,83 @@
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.Collections;
+//import android.util.Log;
 
 String[] phrases; //contains all of the phrases
-int totalTrialNum = 4; //the total number of phrases to be tested - set this low for testing. Might be ~10 for the real bakeoff!
-int currTrialNum = 0; // the current trial number (indexes into trials array above)
-float startTime = 0; // time starts when the first letter is entered
-float finishTime = 0; // records the time of when the final trial ends
-float lastTime = 0; //the timestamp of when the last trial was completed
-float lettersEnteredTotal = 0; //a running total of the number of letters the user has entered (need this for final WPM computation)
-float lettersExpectedTotal = 0; //a running total of the number of letters expected (correct phrases)
-float errorsTotal = 0; //a running total of the number of errors (when hitting next)
-String currentPhrase = ""; //the current target phrase
-String currentTyped = ""; //what the user has typed so far
-static final int DPIofYourDeviceScreen = 240; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
+static int totalTrialNum = 4; //the total number of phrases to be tested - set this low for testing. Might be ~10 for the real bakeoff!
+static int currTrialNum = 0; // the current trial number (indexes into trials array above)
+static float startTime = 0; // time starts when the first letter is entered
+static float finishTime = 0; // records the time of when the final trial ends
+static float lastTime = 0; //the timestamp of when the last trial was completed
+static float lettersEnteredTotal = 0; //a running total of the number of letters the user has entered (need this for final WPM computation)
+static float lettersExpectedTotal = 0; //a running total of the number of letters expected (correct phrases)
+static float errorsTotal = 0; //a running total of the number of errors (when hitting next)
+static String currentPhrase = ""; //the current target phrase
+static String currentTyped = ""; //what the user has typed so far
+
+//Device Settings 
+static final int DPIofYourDeviceScreen = 256; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
-static final float sizeOfInputArea = DPIofYourDeviceScreen*1 ; //aka, 1.0 inches square!
+//static final int DPIofYourDeviceScreen = 218;
+static final int sizeOfInputArea = DPIofYourDeviceScreen*1 ; //aka, 1.0 inches square!
 
-//Variables for my silly implementation. You can delete this:
-char currentLetter = 'a';
+static Boolean started = false; 
 
-static final int blinkingSpeed = 500; //number of milis betwen blinks
+//keyboard constants (needed for declarations here)
+static final float keyMargin = 0;
+static final float rectWidthSmall = (sizeOfInputArea - keyMargin * 4f) / 10f;
+static final float rectHeightSmall = ((sizeOfInputArea - keyMargin * 6f) / 3f) * 2f / 3f;
 
+static final int rectWidth = (int)((sizeOfInputArea - keyMargin * 4f) / 3f);
+    //might change height to accmodate for pull downs
+static final int rectHeight = (int)((sizeOfInputArea - keyMargin * 6) / 3f);
+static final float triangleHeight = (sizeOfInputArea / 2f - keyMargin * 2) / 2f  ;
 static Keyboard K;
-float currentOffset = 0;
-float inputAreaX;
-float inputAreaY;
-float currentScroll = 0;
-float scrollLimit = rectWidth / 2;
-KeyboardButton PrevKey = null;
-KeyboardButton CurrentKey = null;
 
-float mouseDownX = 0;
-float mouseDownMilis = 0;
-float velocity = 0;
-float lastAutoMove = 0;
-float deceleration = 1 / 1000f;
+//gloabls
+//    screen state
+static PFont defaultFont = null; 
+static int inputAreaX = 0;
+static int inputAreaY = 0;
+//   keyboard state
+static float currentOffset = 0;
+static KeyboardButton PrevKey = null;
+static KeyboardButton CurrentKey = null;
+//   scroll state
+static float currentScroll = 0;
+static int mouseDownX = 0;
+static float mouseDownMilis = 0;
+static float velocity = 0;
+static float lastAutoMove = 0;
+
+//Strings
+static String phraseCountString =  "Phrase " + (currTrialNum+1) + " of " + totalTrialNum;;
+static String targetString = "Target:     " + currentPhrase;;
+static String enteredStringNoCursor =  "Entered:   " + currentTyped;
+static String enteredStringCursor = "Entered:   " + currentTyped + "|";
+
+
+//Implementation settings 
+//  cursor speed
+static final int blinkingSpeed = 400; //number of milis betwen blinks
+//    scroll
+static final float scrollLimit = rectWidth / 2;
+static float deceleration = 1 / 1000f;
 
 //You can modify anything in here. This is just a basic implementation.
 void setup()
 {
+  defaultFont = createFont("Arial", 24);
   phrases = loadStrings("phrases2.txt"); //load the phrase set into memory
   Collections.shuffle(Arrays.asList(phrases)); //randomize the order of the phrases
-    
   orientation(PORTRAIT); //can also be LANDSCAPE -- sets orientation on android device
-  size(480, 854); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
-  textFont(createFont("Arial", 24)); //set the font to arial 24
+  size(540, 960); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
+  //size(480, 854);
+  textFont(defaultFont); //set the font to arial 24
+  textLeading(26);
   rectMode(CORNER);
-  inputAreaX = width/2 - sizeOfInputArea/2;
-  inputAreaY = height/2 - sizeOfInputArea/2;
+  inputAreaX = (int)(width/2f - sizeOfInputArea/2f);
+  inputAreaY = (int)(height/2f - sizeOfInputArea/2f);
 
   noStroke(); //my code doesn't use any strokes.
   K = new Keyboard<RectKeyboardButton, RectKeyboardButtonFactory>(new RectKeyboardButtonFactory());
@@ -61,34 +90,33 @@ void draw()
   background(0); //clear background
 
  // image(watch,-200,200);
-  fill(100);
-  rect(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea); //input area should be 2" by 2"
-  if(!K.smallMode && velocity != 0 && lastAutoMove != 0){
-    float sign = velocity < 0 ? -1f : 1f; 
-    float newVelocity = sign * (Math.abs(velocity) - deceleration * (millis() - lastAutoMove));
-    if(Math.abs(newVelocity) >= Math.abs(velocity)){
-      velocity = 0;
-    } else {
-      velocity = newVelocity;
-    }
-    velocity = Math.abs(velocity) < 0.05 ? 0 : velocity;
-    velocity = Math.abs(velocity) > 10 ? 10 : velocity;
-    float dx = velocity * (millis() - lastAutoMove);
-    if(sign == -1 && (currentOffset + dx) <= 0){
-      velocity = 0;
-    } if(sign == 1 && (currentOffset + dx) >= K.maxWidth){
-      velocity = 0;
-    }
-    println("new velocity = " + velocity);
-    scroll(dx);
-  }
   if (finishTime!=0)
   {
     fill(255);
-    textAlign(CENTER);
-    text("Finished", 280, 150);
+    textAlign(LEFT);
+    //text("Finished", 280, 150);
+    text("Trials complete!", 0, 40); //output
+    text("Total time taken: " + (finishTime - startTime), 0, 80); //output
+    text("Total letters entered: " + lettersEnteredTotal,0, 120); //output
+    text("Total letters expected: " + lettersExpectedTotal, 0, 160); //output
+    text("Total errors entered: " + errorsTotal, 0, 200); //output
+    
+    float wpm = (lettersEnteredTotal/5.0f)/((finishTime - startTime)/60000f); //FYI - 60K is number of milliseconds in minute
+    text("Raw WPM: " + wpm, 0, 240); //output
+    
+    float freebieErrors = lettersExpectedTotal*.05; //no penalty if errors are under 5% of chars
+    
+    text("Freebie errors: " + freebieErrors, 0, 280); //output
+    float penalty = max(errorsTotal-freebieErrors,0) * .5f;
+    
+    text("Penalty: " + penalty, 0, 320);
+    text("WPM w/ penalty: " + (wpm-penalty), 0, 360); //yes, minus, becuase higher WPM is better
+
     return;
   }
+  
+  fill(100);
+  rect(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea); //input area should be 2" by 2"
 
   if (startTime==0 & !mousePressed)
   {
@@ -97,10 +125,10 @@ void draw()
     text("Click to start time!", 280, 150); //display this messsage until the user clicks!
   }
 
-  if (startTime==0 & mousePressed)
-  {
-    nextTrial(); //start the trials!
-  }
+  //if (startTime==0 & started)
+  //{
+  //  nextTrial(); //start the trials!
+  //}
 
   if (startTime!=0)
   {
@@ -109,20 +137,20 @@ void draw()
     //you will need something like the next 10 lines in your code. Output does not have to be within the 2 inch area!
     textAlign(LEFT); //align the text left
     fill(128);
-    text("Phrase " + (currTrialNum+1) + " of " + totalTrialNum, 70, 50); //draw the trial count
+    text(phraseCountString, 70, 50); //draw the trial count
     fill(255);
-    text("Target:   " + currentPhrase, 0, 100); //draw the target string
+    text(targetString, 0, 100, width-5, 130); //draw the target string
     if((millis() / blinkingSpeed) % 2 == 0 ){
-      text("Entered:  " + currentTyped, 0, 140); //draw what the user has entered thus far 
+      text(enteredStringNoCursor, 0, 160, width-5, 180); //draw what the user has entered thus far 
     } else {
-      text("Entered:  " + currentTyped + "|", 0, 140); //draw what the user has entered thus far 
+      text(enteredStringCursor, 0, 160, width-5, 180); //draw what the user has entered thus far 
     }
     
     
     fill(255, 0, 0);
     rect(width-200, height-200, 200, 200); //drag next button
     fill(255);
-    text("NEXT > ", width-100, height-100); //draw next label
+    text("NEXT > ", width-150, height-100); //draw next label
 
     //my draw code
     //textAlign(CENTER);
@@ -146,14 +174,41 @@ void scroll(float dx){
    }
 }
 
+void addLetter(char c){
+  if(c == '-'){
+    int len = currentTyped.length();
+    if(len > 0){
+      currentTyped = currentTyped.substring(0, len - 1);
+    }
+  } else {
+    currentTyped =  currentTyped + c;
+  }
+  enteredStringNoCursor = "Entered:   " + currentTyped;
+  enteredStringCursor = "Entered:   " + currentTyped + "|";
+}
+
 void mouseDragged(){
-   //if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-   //  if(!K.smallMode){
-   //    scroll(pmouseX - mouseX);
-   //  }
-   //} else {
-   //  startAutoScroll();
-   //}
+  if(!K.outMode){
+    if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
+      KeyboardButton b = K.whatButton(mouseX, mouseY);
+      if(b != null){
+        if(PrevKey != b){
+          if(PrevKey != null){
+            PrevKey.selected = false;
+          }
+          b.selected = true;
+          PrevKey = b;
+          K.drawTopRow();
+        }
+      } else {
+        if(PrevKey != null){
+           PrevKey.selected = false;
+           PrevKey = null;
+           K.drawTopRow();
+        }
+      }
+    }
+  }
 }
 
 void startAutoScroll(){ 
@@ -178,12 +233,25 @@ boolean didMouseClick(float x, float y, float w, float h) //simple function to d
 }
 
 void mouseReleased(){
-  if(startTime==0)
+  if(startTime==0 || !started){
+    started = true;
+    nextTrial();
     return;
+  } else if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
+    KeyboardButton b = K.whatButton(mouseX, mouseY);
+    if(b != null){
+      addLetter(b.key);
+    }
+    K.zoomOut();
+  }
+  if(PrevKey != null){
+    PrevKey.selected = false;
+    PrevKey = null;
+  }
   /*
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
     PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
-    if(K.smallMode && CurrentKey != null){
+    if(K.outMode && CurrentKey != null){
       float newOffset = K.zoomIn(virtualPoint);
       currentOffset = newOffset;
     } else {
@@ -192,14 +260,14 @@ void mouseReleased(){
         CurrentKey.selected = false;
         CurrentKey = null;
         PrevKey = null;
-        K.smallMode = true;
+        K.outMode = true;
         currentOffset = 10;
       }
     }
     startAutoScroll();
   }
   */
-
+  K.outMode = true;
 }
 
 void mousePressed()
@@ -207,45 +275,9 @@ void mousePressed()
   if(startTime==0)
     return;
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-    PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
-    KeyboardButton Key = K.whatButton(virtualPoint);
-    if(K.smallMode){
-      float newOffset = K.zoomIn(virtualPoint);
-      currentOffset = newOffset;
-    } else {
-      if(Key != null){
-        currentTyped += Key.key;
-        //CurrentKey = null;
-        K.smallMode = true;
-        currentOffset = 10;
-      }
-     }
-     if(Key != null){
-      if(PrevKey != null){
-        PrevKey.selected = false;
-        PrevKey.relButton.selected = false;
-      }
-      Key.selected = true;
-      Key.relButton.selected = true;
-      PrevKey = Key;
-     }
-
-    //if(velocity < 0.06){
-    //  mouseDownMilis = millis();
-    //  mouseDownX = mouseX;
-    //  KeyboardButton NextKey = K.whatButton(virtualPoint);
-    //  if(CurrentKey != null){
-    //    CurrentKey.selected = false;
-    //  }
-    //  if(NextKey != null){
-    //    NextKey.selected = true;
-    //  }
-    //  PrevKey = CurrentKey;
-    //  CurrentKey = NextKey;
-    //  currentScroll = 0;
-    //} else {
-    //  velocity = 0;
-    //}
+    //KeyboardButton Key = K.whatButton(mouseX, mouseY);
+    //float newOffset = K.zoomInSplit(mouseX, mouseY);
+    K.zoomInSplit(mouseX, mouseY);
   }
 
   //PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
@@ -290,7 +322,7 @@ void nextTrial()
   if (currTrialNum >= totalTrialNum) //check to see if experiment is done
     return; //if so, just return
 
-    if (startTime!=0 && finishTime==0) //in the middle of trials
+  if (startTime!=0 && finishTime==0) //in the middle of trials
   {
     System.out.println("==================");
     System.out.println("Phrase " + (currTrialNum+1) + " of " + totalTrialNum); //output
@@ -306,9 +338,10 @@ void nextTrial()
     lettersEnteredTotal+=currentTyped.length();
     errorsTotal+=computeLevenshteinDistance(currentTyped.trim(), currentPhrase.trim());
   }
+  
 
   //probably shouldn't need to modify any of this output / penalty code.
-  if (currTrialNum == totalTrialNum-1) //check to see if experiment just finished
+  if (startTime!=0 && currTrialNum == totalTrialNum-1) //check to see if experiment just finished
   {
     finishTime = millis();
     System.out.println("==================");
@@ -333,6 +366,8 @@ void nextTrial()
     currTrialNum++; //increment by one so this mesage only appears once when all trials are done
     return;
   }
+  
+  
 
   if (startTime==0) //first trial starting now
   {
@@ -343,11 +378,15 @@ void nextTrial()
   {
     currTrialNum++; //increment trial number
   }
-
+  //Log.d("", "next trial");
   lastTime = millis(); //record the time of when this trial ended
   currentTyped = ""; //clear what is currently typed preparing for next trial
   currentPhrase = phrases[currTrialNum]; // load the next phrase!
-  //currentPhrase = "abc"; // uncomment this to override the test phrase (useful for debugging)
+  //currentPhrase = "abc donflnsdlfk sd sidflksd f sdlf hdsf "; // uncomment this to override the test phrase (useful for debugging)
+  phraseCountString = "Phrase " + (currTrialNum+1) + " of " + totalTrialNum;
+  targetString = "Target:     " + currentPhrase;
+  enteredStringNoCursor = "Entered:   " + currentTyped;
+  enteredStringCursor = "Entered:   " + currentTyped + "|";  
 }
 
 //=========SHOULD NOT NEED TO TOUCH THIS METHOD AT ALL!==============
