@@ -1,6 +1,6 @@
 static final ArrayList<Character> firstRow = new ArrayList<Character>(Arrays.asList('q','w','e','r','t','y','u','i','o','p')); 
 static final ArrayList<Character> secondRow = new ArrayList<Character>(Arrays.asList('a','s','d','f','g','h','j','k','l')); 
-static final ArrayList<Character> thirdRow = new ArrayList<Character>(Arrays.asList('z','x','c','v','b','n','m')); 
+static final ArrayList<Character> thirdRow = new ArrayList<Character>(Arrays.asList(' ', 'z','x','c','v','b','n','m', '←')); 
 //static Boolean outMode = false;
 
 class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButtonFactory<Button>> {
@@ -26,11 +26,12 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
     for(int i = 0; i < A.size(); i++){
       //make big char
       Character k = A.get(i);
+      float rowOffset = row == 0 ? 0: 1; 
       float centerXOffset = i*(2f*keyMargin + rectWidth) + keyMargin + rectWidth / 2f;
-      float centerYoffset =  keyMargin + Factory.keyHeight() / 2f ;// + row*(2f*keyMargin + Factory.keyHeight());
+      float centerYoffset =  keyMargin + Factory.keyHeight() / 2f + row*(2f*keyMargin + Factory.keyHeight());
       float centerX = inputAreaX + centerXOffset;
       float centerY = inputAreaY + centerYoffset;      
-      Button newButton = Factory.factory(k, centerX, centerY, row, i, rectWidth, Factory.keyHeight(), null);
+      Button newButton = Factory.factory(k, centerX, centerY, row, i, Factory.keyHeight(), rectWidth, null);
       
       //make small char
       centerXOffset = i*(2f*keyMargin + rectWidthSmall) + keyMargin + rectWidthSmall / 2f;
@@ -64,7 +65,7 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
     float centerX = inputAreaX + centerXOffset;
     float centerY = inputAreaY + centerYoffset;      
     spaceButton = Factory.factory(' ', centerX, centerY, 0, 0, (Factory.keyHeight() * 3f / 4f), sizeOfInputArea / 2f, null);
-    backButton = Factory.factory('-', centerX + 2 * centerXOffset, centerY, 0, 0, (Factory.keyHeight() * 3f / 4f), sizeOfInputArea / 2f, null);
+    backButton = Factory.factory('←', centerX + 2 * centerXOffset, centerY, 0, 0, (Factory.keyHeight() * 3f / 4f), sizeOfInputArea / 2f, null);
   }
   
   void drawTopRow(){
@@ -72,53 +73,53 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
       spaceButton.drawButton(0);
       backButton.drawButton(0);
     } else {
-      KeyboardButton centerButton = topRow.get(1);
-      if(centerButton != null){
-        for(KeyboardButton k: topRow){
-          if(k != null){
-            k.drawButton(centerButton.centerX - sizeOfInputArea - rectWidth / 5.5f);
-          }
-        }
-      }
+      //KeyboardButton centerButton = topRow.get(1);
+      //if(centerButton != null){
+      //  for(KeyboardButton k: topRow){
+      //    if(k != null){
+      //      k.drawButton(centerButton.centerX - sizeOfInputArea - rectWidth / 5.5f);
+      //    }
+      //  }
+      //}
     }
   }
   //draws a keyboard at a given offset
-  void drawKeyboard(float offsetX) {
+  void drawKeyboard(float offsetX){
     drawTopRow();
     //First draw all the buttons
-    //if(outMode){
-    for(ArrayList<Button> row: smallRows){
-      for(KeyboardButton k: row){
-        k.drawButton(0);
+    if(outMode){
+      for(ArrayList<Button> row: smallRows){
+        for(KeyboardButton k: row){
+          k.drawButton(0);
+        }
+      }
+    } else {
+      for(ArrayList<Button> row: rows){
+        for(KeyboardButton k: row){
+          k.drawButton(offsetX);
+        }
       }
     }
-    //}
-    //} else {
-    //  for(ArrayList<Button> row: rows){
-    //    for(KeyboardButton k: row){
-    //      k.drawButton(offsetX);
-    //    }
-    //  }
-    //}
     //second cover the sceen where you can't press them
     stroke(0);
     fill(0);
     //left
-    //rect(0, 0, inputAreaX, height);
+    rect(0, 0, inputAreaX, height);
     //right
-    //rect(inputAreaX + sizeOfInputArea, 0, width, height);
+    rect(inputAreaX + sizeOfInputArea, 0, width, height);
   }
   void zoomOut(){
     topRow.set(0, null);
     topRow.set(1, null);
     topRow.set(2, null);
     centerButton = null;
+    currentOffset = 0;
   }
   
-  float zoomIn(PVector p) {
+  float zoomIn(int x, int y) {
    for(ArrayList<Button> row: smallRows){
       for(KeyboardButton k: row){
-        if(k.isWithinButton((int)p.x, (int)p.y)){
+        if(k.isWithinButton(x, y)){
           if(k.relButton != null){
             outMode = false;
             return (float)(k.relButton.centerX - sizeOfInputArea);
@@ -156,7 +157,10 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
         for(KeyboardButton k: row){
           if(k.isWithinButton(x, y)){
             if(k.relButton != null){
-              return k;
+              currentOffset = k.centerX;//  - sizeOfInputArea;
+              outMode = false;
+              
+              return null;
             }
           }
         }
@@ -166,16 +170,24 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
       if(spaceButton.isWithinButton(x,y))
         return spaceButton;
     } else {
-      KeyboardButton centerButton = topRow.get(1);
-      if(centerButton != null){
-        for(KeyboardButton k: topRow){
-          if(k != null){
-            if(k.isWithinButton(x + (int)centerButton.centerX  - sizeOfInputArea, y)){
-              return k;
-            }
+      for(ArrayList<Button> row: rows){
+        for(KeyboardButton k: row){
+          if(k.isWithinButton(x, y)){
+            return k;
           }
         }
       }
+
+      //KeyboardButton centerButton = topRow.get(1);
+      //if(centerButton != null){
+      //  for(KeyboardButton k: topRow){
+      //    if(k != null){
+      //      if(k.isWithinButton(x + (int)centerButton.centerX  - sizeOfInputArea, y)){
+      //        return k;
+      //      }
+      //    }
+      //  }
+      //}
     }
     return null;
   }

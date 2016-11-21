@@ -16,9 +16,9 @@ static String currentPhrase = ""; //the current target phrase
 static String currentTyped = ""; //what the user has typed so far
 
 //Device Settings 
-static final int DPIofYourDeviceScreen = 256; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
+//static final int DPIofYourDeviceScreen = 256; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
-//static final int DPIofYourDeviceScreen = 218;
+static final int DPIofYourDeviceScreen = 218;
 static final int sizeOfInputArea = DPIofYourDeviceScreen*1 ; //aka, 1.0 inches square!
 
 static Boolean started = false; 
@@ -28,9 +28,9 @@ static final float keyMargin = 0;
 static final float rectWidthSmall = (sizeOfInputArea - keyMargin * 4f) / 10f;
 static final float rectHeightSmall = ((sizeOfInputArea - keyMargin * 6f) / 3f) * 2f / 3f;
 
-static final int rectWidth = (int)((sizeOfInputArea - keyMargin * 4f) / 3f);
+static final int rectWidth = (int)((sizeOfInputArea - keyMargin * 4f) / 3.5f);
     //might change height to accmodate for pull downs
-static final int rectHeight = (int)((sizeOfInputArea - keyMargin * 6) / 3f);
+static final float rectHeight = ((sizeOfInputArea - keyMargin * 6) / 3f);
 static final float triangleHeight = (sizeOfInputArea / 2f - keyMargin * 2) / 2f  ;
 static Keyboard K;
 
@@ -55,6 +55,7 @@ static String phraseCountString =  "Phrase " + (currTrialNum+1) + " of " + total
 static String targetString = "Target:     " + currentPhrase;;
 static String enteredStringNoCursor =  "Entered:   " + currentTyped;
 static String enteredStringCursor = "Entered:   " + currentTyped + "|";
+String currentWord = "";
 
 
 //Implementation settings 
@@ -71,8 +72,8 @@ void setup()
   phrases = loadStrings("phrases2.txt"); //load the phrase set into memory
   Collections.shuffle(Arrays.asList(phrases)); //randomize the order of the phrases
   orientation(PORTRAIT); //can also be LANDSCAPE -- sets orientation on android device
-  size(540, 960); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
-  //size(480, 854);
+  //size(540, 960); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
+  size(480, 854);
   textFont(defaultFont); //set the font to arial 24
   textLeading(26);
   rectMode(CORNER);
@@ -175,13 +176,17 @@ void scroll(float dx){
 }
 
 void addLetter(char c){
-  if(c == '-'){
+  if(c == '←'){
     int len = currentTyped.length();
     if(len > 0){
       currentTyped = currentTyped.substring(0, len - 1);
     }
   } else {
     currentTyped =  currentTyped + c;
+    currentWord += c;
+  }
+  if(c == ' '){
+    currentWord = "";
   }
   enteredStringNoCursor = "Entered:   " + currentTyped;
   enteredStringCursor = "Entered:   " + currentTyped + "|";
@@ -190,7 +195,7 @@ void addLetter(char c){
 void mouseDragged(){
   if(!K.outMode){
     if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-      KeyboardButton b = K.whatButton(mouseX, mouseY);
+      KeyboardButton b = K.whatButton((int)(mouseX + currentOffset), mouseY);
       if(b != null){
         if(PrevKey != b){
           if(PrevKey != null){
@@ -198,34 +203,36 @@ void mouseDragged(){
           }
           b.selected = true;
           PrevKey = b;
-          K.drawTopRow();
+          b.drawButton(currentOffset);
+          //K.drawTopRow();
         }
       } else {
         if(PrevKey != null){
            PrevKey.selected = false;
+           PrevKey.drawButton(currentOffset);
            PrevKey = null;
-           K.drawTopRow();
+           //K.drawTopRow();
         }
       }
     }
   }
 }
 
-void startAutoScroll(){ 
-  //don't double start
-  if(velocity == 0 && currentScroll > scrollLimit){
-    lastAutoMove = millis();
-    float t = millis() - mouseDownMilis;
-    float dx = mouseDownX - mouseX;
-    velocity = dx / t;
-    if(velocity > 3){
-      velocity = 3;
-    } else if (velocity < -3){
-      velocity = -3;
-    }
-    println("Velocity = " + velocity);
-  }
-}
+//void startAutoScroll(){ 
+//  //don't double start
+//  if(velocity == 0 && currentScroll > scrollLimit){
+//    lastAutoMove = millis();
+//    float t = millis() - mouseDownMilis;
+//    float dx = mouseDownX - mouseX;
+//    velocity = dx / t;
+//    if(velocity > 3){
+//      velocity = 3;
+//    } else if (velocity < -3){
+//      velocity = -3;
+//    }
+//    println("Velocity = " + velocity);
+//  }
+//}
 
 boolean didMouseClick(float x, float y, float w, float h) //simple function to do hit testing
 {
@@ -238,7 +245,7 @@ void mouseReleased(){
     nextTrial();
     return;
   } else if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
-    KeyboardButton b = K.whatButton(mouseX, mouseY);
+    KeyboardButton b = K.whatButton((int)(mouseX + currentOffset), mouseY);
     if(b != null){
       addLetter(b.key);
     }
@@ -277,7 +284,7 @@ void mousePressed()
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
     //KeyboardButton Key = K.whatButton(mouseX, mouseY);
     //float newOffset = K.zoomInSplit(mouseX, mouseY);
-    K.zoomInSplit(mouseX, mouseY);
+    currentOffset  = K.zoomIn(mouseX, mouseY);
   }
 
   //PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);

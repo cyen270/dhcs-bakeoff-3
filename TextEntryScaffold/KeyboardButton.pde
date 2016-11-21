@@ -30,10 +30,10 @@ abstract class KeyboardButton {
     key = c;
     switch(c){
       case ' ':
-        displayText = "SPACE";
+        displayText = "_";
         break;
-      case '-':
-        displayText = "DEL";
+      case '←':
+        displayText = "←";
         break;
       default:
         displayText = Character.toString(Character.toUpperCase(key));
@@ -76,7 +76,8 @@ class RectKeyboardButton extends KeyboardButton {
   RectKeyboardButton(Character c, float x, float y, int r, int i, float h, float w){
     super(c, x, y, r, i, h, w);
     //move center for row 
-    centerX = x + r * myWidth/2;
+    float rowOffset = row == 0 ? 0: 1;
+    centerX = x + rowOffset * myWidth/2;
     x0 = centerX - myWidth/2;
     x1 = centerX + myWidth/2;
     y0 = centerY - myHeight/2;
