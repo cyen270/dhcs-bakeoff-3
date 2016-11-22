@@ -48,7 +48,8 @@ static KeyboardButton CurrentKey = null;
 static float currentScroll = 0;
 static int mouseDownX = 0;
 static float mouseDownMilis = 0;
-static float velocity = 0;
+static float speed = sizeOfInputArea / (1000f * 12f); // units are pixles per milli
+static float velocity = 0; // units are pixles per milli
 static float lastAutoMove = 0;
 
 //Strings
@@ -72,8 +73,8 @@ static JSONObject twoWordDict;
 //You can modify anything in here. This is just a basic implementation.
 void setup()
 {
-  wordDict = loadJSONObject("wordFreqTop120000.json");
-  twoWordDict = loadJSONObject("word2FreqTop80000.json");
+  wordDict = loadJSONObject("wordFreqTop80000.json");
+  twoWordDict = loadJSONObject("word2FreqTopAuto20000.json");
   defaultFont = createFont("Arial.ttf", 24);
   textSize(24);
   phrases = loadStrings("phrases2.txt"); //load the phrase set into memory
@@ -141,6 +142,14 @@ void draw()
 
   if (startTime!=0)
   {
+    if(!K.outMode && !K.predictMode && velocity != 0){
+      if(lastAutoMove == 0){
+        lastAutoMove = millis();
+      } else {
+        float dx = (lastAutoMove - millis()) * velocity;
+        scroll(dx);
+      }
+    }
     K.drawKeyboard(currentOffset);
         
     //you will need something like the next 10 lines in your code. Output does not have to be within the 2 inch area!
@@ -232,6 +241,16 @@ void mouseDragged(){
           b.drawButton(currentOffset);
           //K.drawTopRow();
         }
+        if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea / 4f, sizeOfInputArea)){
+          velocity = speed;
+          println("velo:");
+        } else if (didMouseClick(inputAreaX + sizeOfInputArea * 3f / 4f, inputAreaY, sizeOfInputArea / 4f, sizeOfInputArea)){
+          velocity = -1f * speed;
+          println("velo2:");
+        } else {
+          velocity = 0;
+          lastAutoMove = 0;
+        }
       } else {
         if(PrevKey != null){
            PrevKey.selected = false;
@@ -284,6 +303,8 @@ void mouseReleased(){
     PrevKey.selected = false;
     PrevKey = null;
   }
+  velocity = 0;
+  lastAutoMove = 0;
   /*
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
     PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
