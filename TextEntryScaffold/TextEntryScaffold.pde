@@ -16,9 +16,9 @@ static String currentPhrase = ""; //the current target phrase
 static String currentTyped = ""; //what the user has typed so far
 
 //Device Settings 
-//static final int DPIofYourDeviceScreen = 256; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
+static final int DPIofYourDeviceScreen = 256; //you will need to look up the DPI or PPI of your device to make sure you get the right scale!!
                                       //http://en.wikipedia.org/wiki/List_of_displays_by_pixel_density
-static final int DPIofYourDeviceScreen = 218;
+//static final int DPIofYourDeviceScreen = 218;
 static final int sizeOfInputArea = DPIofYourDeviceScreen*1 ; //aka, 1.0 inches square!
 
 static Boolean started = false; 
@@ -26,12 +26,13 @@ static Boolean started = false;
 //keyboard constants (needed for declarations here)
 static final float keyMargin = 0;
 static final float rectWidthSmall = (sizeOfInputArea - keyMargin * 4f) / 10f;
-static final float rectHeightSmall = ((sizeOfInputArea - keyMargin * 6f) / 3f) * 2f / 3f;
+static final float rectHeightSmall = ((sizeOfInputArea - keyMargin * 6f) / 3f) / 2f;
 
 static final int rectWidth = (int)((sizeOfInputArea - keyMargin * 4f) / 3.5f);
     //might change height to accmodate for pull downs
 static final float rectHeight = ((sizeOfInputArea - keyMargin * 6) / 3f);
 static final float triangleHeight = (sizeOfInputArea / 2f - keyMargin * 2) / 2f  ;
+static Predictor Pred;
 static Keyboard K;
 
 //gloabls
@@ -56,6 +57,7 @@ static String targetString = "Target:     " + currentPhrase;;
 static String enteredStringNoCursor =  "Entered:   " + currentTyped;
 static String enteredStringCursor = "Entered:   " + currentTyped + "|";
 String currentWord = "";
+String prevWord = "";
 
 
 //Implementation settings 
@@ -64,16 +66,21 @@ static final int blinkingSpeed = 400; //number of milis betwen blinks
 //    scroll
 static final float scrollLimit = rectWidth / 2;
 static float deceleration = 1 / 1000f;
+static JSONObject wordDict;
+static JSONObject twoWordDict;
 
 //You can modify anything in here. This is just a basic implementation.
 void setup()
 {
-  defaultFont = createFont("Arial", 24);
+  wordDict = loadJSONObject("wordFreqTop120000.json");
+  twoWordDict = loadJSONObject("word2FreqTop80000.json");
+  defaultFont = createFont("Arial.ttf", 24);
+  textSize(24);
   phrases = loadStrings("phrases2.txt"); //load the phrase set into memory
   Collections.shuffle(Arrays.asList(phrases)); //randomize the order of the phrases
   orientation(PORTRAIT); //can also be LANDSCAPE -- sets orientation on android device
-  //size(540, 960); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
-  size(480, 854);
+  size(540, 960); //Sets the size of the app. You may want to modify this to your device. Many phones today are 1080 wide by 1920 tall.
+  //size(480, 854);
   textFont(defaultFont); //set the font to arial 24
   textLeading(26);
   rectMode(CORNER);
@@ -81,6 +88,7 @@ void setup()
   inputAreaY = (int)(height/2f - sizeOfInputArea/2f);
 
   noStroke(); //my code doesn't use any strokes.
+  Pred = new Predictor();
   K = new Keyboard<RectKeyboardButton, RectKeyboardButtonFactory>(new RectKeyboardButtonFactory());
   //K = new Keyboard<TriangleKeyboardButton, TriangleKeyboardButtonFactory>(new TriangleKeyboardButtonFactory());
 }
@@ -155,7 +163,7 @@ void draw()
 
     //my draw code
     //textAlign(CENTER);
-    //text("" + currentLetter, 200+sizeOfInputArea/2, 200+sizeOfInputArea/3); //draw current letter
+    //text("" + currentLetter, 200+sizeOfInputArea/2, 200+sizeOfInputArea/3); //draw  letter
     //fill(255, 0, 0);
     //rect(200, 200+sizeOfInputArea/2, sizeOfInputArea/2, sizeOfInputArea/2); //draw left red button
     //fill(0, 255, 0);
@@ -175,19 +183,36 @@ void scroll(float dx){
    }
 }
 
-void addLetter(char c){
-  if(c == '←'){
+void addLetter(Character c){
+  if(Character.isDigit(c)){
+    int pIdx = Character.getNumericValue(c);
+    String add = K.getPrediction(pIdx);
+    currentTyped += K.getPrediction(pIdx);
+    currentWord += K.getPrediction(pIdx);
+  } else if(c == '←'){
     int len = currentTyped.length();
     if(len > 0){
       currentTyped = currentTyped.substring(0, len - 1);
+      if(currentWord.length() <= 0){
+        currentWord = Pred.getLastWord(currentTyped);
+        prevWord = Pred.getSecondToLastWord(currentTyped);
+      } else {
+        currentWord = currentWord.substring(0, currentWord.length() - 1);
+      }
     }
   } else {
     currentTyped =  currentTyped + c;
-    currentWord += c;
+    if(c != ' '){
+      currentWord += c;
+    }
   }
   if(c == ' '){
+    prevWord = currentWord;
     currentWord = "";
   }
+  println(currentWord);
+  String[] preds = Pred.getPrediction(currentWord);
+  println(preds[0] +" : " + preds[1] + " : " +preds[2]);
   enteredStringNoCursor = "Entered:   " + currentTyped;
   enteredStringCursor = "Entered:   " + currentTyped + "|";
 }
@@ -200,6 +225,7 @@ void mouseDragged(){
         if(PrevKey != b){
           if(PrevKey != null){
             PrevKey.selected = false;
+            PrevKey.drawButton(currentOffset);
           }
           b.selected = true;
           PrevKey = b;
@@ -249,7 +275,10 @@ void mouseReleased(){
     if(b != null){
       addLetter(b.key);
     }
+    println(millis());
     K.zoomOut();
+    println(millis());
+    //draw();
   }
   if(PrevKey != null){
     PrevKey.selected = false;
@@ -275,6 +304,7 @@ void mouseReleased(){
   }
   */
   K.outMode = true;
+  K.drawKeyboard(0);
 }
 
 void mousePressed()
@@ -284,7 +314,7 @@ void mousePressed()
   if(didMouseClick(inputAreaX, inputAreaY, sizeOfInputArea, sizeOfInputArea)){
     //KeyboardButton Key = K.whatButton(mouseX, mouseY);
     //float newOffset = K.zoomInSplit(mouseX, mouseY);
-    currentOffset  = K.zoomIn(mouseX, mouseY);
+    currentOffset = K.zoomIn(mouseX, mouseY);
   }
 
   //PVector virtualPoint = new PVector(mouseX + currentOffset, mouseY);
@@ -388,6 +418,7 @@ void nextTrial()
   //Log.d("", "next trial");
   lastTime = millis(); //record the time of when this trial ended
   currentTyped = ""; //clear what is currently typed preparing for next trial
+  currentWord = "";
   currentPhrase = phrases[currTrialNum]; // load the next phrase!
   //currentPhrase = "abc donflnsdlfk sd sidflksd f sdlf hdsf "; // uncomment this to override the test phrase (useful for debugging)
   phraseCountString = "Phrase " + (currTrialNum+1) + " of " + totalTrialNum;

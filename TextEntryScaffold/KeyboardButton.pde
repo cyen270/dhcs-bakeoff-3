@@ -8,6 +8,7 @@ interface KeyboardButtonFactory<Button extends KeyboardButton>{
 abstract class KeyboardButton {
   Character key;
   String displayText;
+  String appendText = null;
   float centerX;
   float centerY;
   float myWidth;

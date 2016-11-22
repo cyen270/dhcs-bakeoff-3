@@ -5,8 +5,11 @@ static final ArrayList<Character> thirdRow = new ArrayList<Character>(Arrays.asL
 
 class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButtonFactory<Button>> {
   boolean outMode = true;
+  boolean predictMode = false;
   float maxWidth = 0;
-  
+
+  ArrayList<Button> predKeys = new ArrayList<Button>();
+  ArrayList<Button> predKeysBig = new ArrayList<Button>();
   ArrayList<ArrayList<Button>> rows = new ArrayList<ArrayList<Button>>();
   ArrayList<ArrayList<Button>> smallRows = new ArrayList<ArrayList<Button>>();  
   ArrayList<KeyboardButton> topRow = new ArrayList<KeyboardButton>();
@@ -64,14 +67,28 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
     float centerYoffset =  keyMargin + (Factory.keyHeight() * 3f / 4f) / 2f ;// + row*(2f*keyMargin + Factory.keyHeight());
     float centerX = inputAreaX + centerXOffset;
     float centerY = inputAreaY + centerYoffset;      
-    spaceButton = Factory.factory(' ', centerX, centerY, 0, 0, (Factory.keyHeight() * 3f / 4f), sizeOfInputArea / 2f, null);
-    backButton = Factory.factory('←', centerX + 2 * centerXOffset, centerY, 0, 0, (Factory.keyHeight() * 3f / 4f), sizeOfInputArea / 2f, null);
+    //spaceButton = Factory.factory(' ', centerX, centerY, 0, 0, (Factory.keyHeight() * 3f / 4f), sizeOfInputArea / 2f, null);
+    //backButton = Factory.factory('←', centerX + 2 * centerXOffset, centerY, 0, 0, (Factory.keyHeight() * 3f / 4f), sizeOfInputArea / 2f, null);
+    for(Integer i = 0; i < 3; i++){
+      centerX = inputAreaX + sizeOfInputArea / 2f;
+      centerY = inputAreaY + i*(Factory.keyHeight( )/2f) + (Factory.keyHeight( )/3f)/ 2f ;
+      Button predButton = Factory.factory(Character.forDigit(i, 10) , centerX, centerY, 0, 0, (Factory.keyHeight( )/2f), sizeOfInputArea, null);
+      predButton.displayText = "";
+      predKeys.add(predButton);
+      centerY = inputAreaY + i*(sizeOfInputArea / 3f) + (sizeOfInputArea / 3f)/ 2f ;
+      Button predButtonBig = Factory.factory(Character.forDigit(i, 10) , centerX, centerY, 0, 0, (sizeOfInputArea / 3f), sizeOfInputArea, null);
+      predButtonBig.displayText = "";
+      predKeysBig.add(predButtonBig);
+    }
   }
   
   void drawTopRow(){
     if(K.outMode){
-      spaceButton.drawButton(0);
-      backButton.drawButton(0);
+      for(Button b: predKeys){
+        b.drawButton(0);
+      }
+      //spaceButton.drawButton(0);
+      //backButton.drawButton(0);
     } else {
       //KeyboardButton centerButton = topRow.get(1);
       //if(centerButton != null){
@@ -93,6 +110,10 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
           k.drawButton(0);
         }
       }
+    } else if (predictMode){
+      for(Button b: predKeysBig){
+        b.drawButton(0);
+      }
     } else {
       for(ArrayList<Button> row: rows){
         for(KeyboardButton k: row){
@@ -108,25 +129,58 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
     //right
     rect(inputAreaX + sizeOfInputArea, 0, width, height);
   }
+  
+  String getPrediction(int i){
+    return predKeys.get(i).appendText;
+  }
+  
   void zoomOut(){
-    topRow.set(0, null);
-    topRow.set(1, null);
-    topRow.set(2, null);
+    //topRow.set(0, null);
+    //topRow.set(1, null);
+    //topRow.set(2, null);
+    String[] preds = Pred.getPrediction(currentWord);
+    String word;
+    for(int i = 0; i < 3; i ++){
+      Button k = predKeys.get(i);
+      Button bigK = predKeysBig.get(i);
+      word = preds[i];
+      k.displayText = word;
+      bigK.displayText = word;
+      if(word.length() > 0){
+        k.appendText = word.substring(currentWord.length());
+        bigK.appendText = word.substring(currentWord.length());
+      } else {
+        k.appendText = null;
+        bigK.appendText = null;
+      }
+    }
+    predictMode = false;
+    outMode = false;
     centerButton = null;
     currentOffset = 0;
   }
   
   float zoomIn(int x, int y) {
-   for(ArrayList<Button> row: smallRows){
-      for(KeyboardButton k: row){
-        if(k.isWithinButton(x, y)){
-          if(k.relButton != null){
-            outMode = false;
-            return (float)(k.relButton.centerX - sizeOfInputArea);
+    if(outMode){
+     for(ArrayList<Button> row: smallRows){
+        for(KeyboardButton k: row){
+          if(k.isWithinButton(x, y)){
+            if(k.relButton != null){
+              outMode = false;
+              return (float)(k.relButton.centerX - sizeOfInputArea);
+            }
           }
         }
       }
-    }
+      for(Button k: predKeys){
+        if(k.isWithinButton(x, y)){
+          outMode = false;
+          predictMode = true;
+          return 0;
+        }
+      }
+    } 
+    
     return 0;
   }
   
@@ -165,10 +219,23 @@ class Keyboard<Button extends KeyboardButton, ButtonFactory extends KeyboardButt
           }
         }
       }
-      if(backButton.isWithinButton(x,y))
-        return backButton;
-      if(spaceButton.isWithinButton(x,y))
-        return spaceButton;
+      for(Button k: predKeys){
+        if(k.isWithinButton(x, y)){
+          outMode = false;
+          predictMode = true;
+          return null;
+        }
+      }
+      //if(backButton.isWithinButton(x,y))
+      //  return backButton;
+      //if(spaceButton.isWithinButton(x,y))
+      //  return spaceButton;
+    } else if (predictMode){
+      for(Button k: predKeysBig){
+        if(k.isWithinButton(x, y)){
+          return k;
+        }
+      } 
     } else {
       for(ArrayList<Button> row: rows){
         for(KeyboardButton k: row){
