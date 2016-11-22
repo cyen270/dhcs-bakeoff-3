@@ -2,10 +2,11 @@ import json
 import string
 
 fileNameWords = "ngrams/count_1w.txt"
-outfileName = "TextEntryScaffold/data/wordFreqTop120000.json"
+outfileName = "TextEntryScaffold/data/wordFreqTop70000.json"
+outfile2Name = "TextEntryScaffold/data/word2FreqTop70000.json"
 
 wordDict = {}
-testCount = 80000
+testCount = 70000
 x = 0
 
 ##oneword
@@ -14,6 +15,11 @@ with open(fileNameWords, 'r') as wordFreq:
         x += 1
         if x > testCount:
             break
+        if x % 10000 == 0:
+            filename = "TextEntryScaffold/data/wordFreqTopAuto%d.json" % x
+            with open(filename, 'w') as outfile:
+                json.dump(wordDict, outfile)
+            print "Saved at: ", x
         if x % 1000 == 0:
             print x
         A = line.split() #split on whitespace
@@ -33,7 +39,8 @@ with open(fileNameWords, 'r') as wordFreq:
 with open(outfileName, 'w') as outfile:
     json.dump(wordDict, outfile)
 
-'''
+
+wordFreq = {}
 
 #two words
 with open(fileNameWords, 'r') as wordFreq:
@@ -42,6 +49,11 @@ with open(fileNameWords, 'r') as wordFreq:
         assert (len(A) % 3 == 0)
         for i in xrange(0, len(A), 3):
             x += 1
+            if x % 10000 == 0:
+                filename = "TextEntryScaffold/data/word2FreqTopAuto%d.json" % x
+                with open(filename, 'w') as outfile:
+                    json.dump(wordDict, outfile)
+                print "Saved 2 at: ", x
             if x > testCount:
                 break
             if x % 1000 == 0:
@@ -65,6 +77,5 @@ with open(fileNameWords, 'r') as wordFreq:
 
         #should be top 3
 
-with open(outfileName, 'w') as outfile:
+with open(outfile2Name, 'w') as outfile:
     json.dump(wordDict, outfile)
-'''
